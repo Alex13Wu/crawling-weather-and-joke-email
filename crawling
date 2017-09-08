@@ -1,0 +1,48 @@
+from pypinyin import lazy_pinyin
+import smtplib
+from email.mime.text import MIMEText
+
+
+def weather_crawler():
+    city = "fuzhou" /想爬取的天气的目的地的拼音
+    city_pinyin = ' '.join(lazy_pinyin(city))
+    weather_url = ('http://{}.tianqi.com/'.format(city_pinyin))
+    weather_web_data = requests.get(weather_url)
+    weather_soup = BeautifulSoup(weather_web_data.text,'lxml')
+    weather = weather_soup.select('#detail > div:nth-of-type(2) > ul > li:nth-of-type(3)')[0].get_text()[0:15]
+    temperature = weather_soup.select('li.fon14 span')[0].get_text()[0:15]
+    data = weather_soup.select('#detail > div:nth-of-type(2) > p')[0].get_text()[0:15]
+    wind = weather_soup.select('#detail > div:nth-of-type(2) > ul > li:nth-of-type(4)')[0].get_text()[0:15]
+    clothes = weather_soup.select('#myCont01 > div:nth-of-type(1) > div > div.today_data > div.today_data_r01 > ul > li.shzsbox_01')[0].get_text()[0:15]
+    # print('明天是'+data,'\n'+'天气为'+weather,'\n'+'风力情况为',wind,'\n'+'温度为'+temperature+'\n'+clothes)
+    report_data='明天是'+data+'\n'+'福州天气为'+weather+'\n'+'风力情况为'+wind+'\n'+'温度为'+temperature+'\n'+clothes+'\n'+'\n'
+    return (report_data)
+def joke_crawler():
+    url = 'https://www.qiushibaike.com/text/'
+    wb_data = requests.get(url)
+    soup = BeautifulSoup(wb_data.text,'lxml')
+    content = soup.select('div.content span')
+    datas = "亲爱的Susan晚安 \n下面是系统自动抓到的笑话:  "
+    for i in range(2,7):
+        data = content[i].text.strip()
+        datas = datas + '\n' + '\n' + data
+        # print(datas)
+    return (datas)
+
+if __name__ == '__main__':
+    weather_crawler()
+    joke_crawler()
+report_data2 = weather_crawler() + joke_crawler()
+print(report_data2)
+_user = " " /你的邮箱地址
+_pwd  = " " /你邮箱授权码
+_to   = ['',''] /目的邮箱地址
+msg = MIMEText(report_data2, 'plain', 'utf-8')
+msg["Subject"] = "天气预报和笑话" /邮件主题
+msg["From"]    = _user
+msg["To"]      = ",".join(_to)
+s = smtplib.SMTP_SSL("smtp.qq.com", 465)
+s.login(_user, _pwd)
+s.sendmail(msg["From"], _to, msg.as_string())
+s.quit()
+print ("Success!")
